@@ -7,6 +7,7 @@ const { client, CREATE_REPORT } = require("../myscript/Apollo");
 const { sendEmail } = require("./nodeMailer");
 const { URL } = require("url");
 const ReportMonitorModel = require("../models/ReportMonitering");
+const UptimeRecord = require("../models/UptimeRecord");
 const DB_URL = `mongodb+srv://scrapy:mod123456!@scrapy.uud98fe.mongodb.net/scrapy-django_11?retryWrites=true&w=majority`;
 
 const processScheduleJob = async (job) => {
@@ -342,42 +343,53 @@ const processScheduleJob = async (job) => {
 const processSchedule30Minute = async (job) => {
   try {
     const data = await UptimeModel.find({ isMonitoring: true });
-    const domains = data.map((item) => item.domain);
+    // console.log("data", data);
     const errorStatuses = [400, 401, 402, 403, 404, 500];
 
-    for (const domain of domains) {
+    for (const item of data) {
+      const { domain, userId, projectId } = item;
+      // console.log("domain", domain);
       try {
+        const startTime = new Date();
+
         const response = await axios.get(`https://${domain}`);
+
+        const endTime = new Date();
+        const responseTime = endTime - startTime;
         const { status } = response;
-        if (errorStatuses.includes(status)) {
-          const errorUsers = data.filter((item) => item.domain === domain);
-          const userIds = errorUsers.map((item) => item.userId);
+        // console.log("status", status);
 
-          const users = await UserModel.find({ _id: { $in: userIds } });
-
-          for (const user of users) {
-            const errorDetails = `Website: ${domain}\nStatus: ${status}\n\nAdditional error details...\n`;
-
-            try {
-              await sendEmail(user, errorDetails);
-            } catch (error) {
-              console.error("Error sending email:", error);
-            }
-          }
+        if (!errorStatuses.includes(status)) {
+          await UptimeRecord.create({
+            userId,
+            projectId,
+            website: domain,
+            isUp: true,
+            responseTime,
+            timestamp: new Date(),
+          });
         }
       } catch (error) {
-        const errorUsers = data.filter((item) => item.domain === domain);
-        const userIds = errorUsers.map((item) => item.userId);
+        console.error("Error fetching website status:", error);
 
-        const users = await UserModel.find({ _id: { $in: userIds } });
-  
-        for (const user of users) {
-          const errorDetails = `Website: ${domain}\nStatus: ${error.response.status}\n\nAdditional error details...\n`;
+        await UptimeRecord.create({
+          userId,
+          projectId,
+          website: domain,
+          isUp: false,
+          timestamp: new Date(),
+        });
+
+        const user = await UserModel.findOne({ _id: userId });
+        if (user) {
+          const errorDetails = `Website: ${domain}\nStatus: ${
+            error.response ? error.response.status : "Unknown"
+          }\n\nAdditional error details...\n`;
 
           try {
             await sendEmail(user, errorDetails);
-          } catch (error) {
-            console.error("Error sending email:", error);
+          } catch (emailError) {
+            console.error("Error sending email:", emailError);
           }
         }
       }
@@ -388,19 +400,22 @@ const processSchedule30Minute = async (job) => {
       const users = await UserModel.find(); // Fetch all users
 
       for (const user of users) {
-        const errorDetails = `Website: ${domain}\nStatus: ${error.response.status}\n\nAdditional error details...\n`;
+        const errorDetails = `Status: ${
+          error.response ? error.response.status : "Unknown"
+        }\n\nAdditional error details...\n`;
 
         try {
           await sendEmail(user, errorDetails);
-        } catch (error) {
-          console.error("Error sending email:", error);
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
         }
       }
-    } catch (error) {
-      console.error("Error fetching users:", error);
+    } catch (userFetchError) {
+      console.error("Error fetching users:", userFetchError);
     }
   }
 };
+
 
 const startAgenda = async () => {
   try {
@@ -409,10 +424,10 @@ const startAgenda = async () => {
 
     console.log("Agenda job started");
 
-    agenda.define("processSchedule", processScheduleJob);
-    agenda.every("1 minute", "processSchedule");
-    agenda.define("processSchedule10Minute", processSchedule30Minute);
-    agenda.every("30 minute", "processSchedule30Minute");
+    // agenda.define("processSchedule", processScheduleJob);
+    // agenda.every("1 minute", "processSchedule");
+    agenda.define("processSchedule30Minute", processSchedule30Minute);
+    agenda.every("1 minute", "processSchedule30Minute");
     await agenda.now("processSchedule", "processSchedule30Minute");
   } catch (error) {
     console.error("Error starting Agenda job:", error);
