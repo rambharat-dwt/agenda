@@ -49,7 +49,7 @@ const processScheduleJob = async (job) => {
       const mostRecentReport = await ReportMonitorModel.findOne({}).sort({
         reportCreated: -1,
       });
-      console.log("mostRecentReport", mostRecentReport);
+
       if (mostRecentReport) {
         const reportCreatedDate = mostRecentReport.reportCreated;
         if (reportCreatedDate && reportCreatedDate !== currentDate) {
@@ -62,7 +62,6 @@ const processScheduleJob = async (job) => {
             });
             const resultData = res.data.ScrapUrl;
             const report = resultData;
-            console.log("report", report);
 
             const newReport = new ReportMonitorModel({
               userId,
@@ -94,9 +93,7 @@ const processScheduleJob = async (job) => {
           });
           const resultData = res.data.ScrapUrl;
           const report = resultData;
-          console.log("report", report);
 
-          // No document exists, create a new one
           const newReport = new ReportMonitorModel({
             userId,
             projectId,
@@ -111,7 +108,13 @@ const processScheduleJob = async (job) => {
 
           console.log("New report created for user:", userId);
         } catch (error) {
-          console.error("Error executing mutation:", error);
+          if (
+            error.message === "Your Website Crawlling is already in progress."
+          ) {
+            console.log("Crawling is already in progress for this user");
+          } else {
+            console.error("Error executing mutation:", error);
+          }
         }
       }
     });
@@ -190,7 +193,13 @@ const processScheduleJob = async (job) => {
 
             console.log("User document updated :", mostRecentReport._id);
           } catch (error) {
-            console.error("Error executing mutation:", error);
+            if (
+              error.message === "Your Website Crawlling is already in progress."
+            ) {
+              console.log("Crawling is already in progress for this user");
+            } else {
+              console.error("Error executing mutation:", error);
+            }
           }
         }
       } else {
@@ -203,9 +212,7 @@ const processScheduleJob = async (job) => {
           });
           const resultData = res.data.ScrapUrl;
           const report = resultData;
-          console.log("report", report);
 
-          // No document exists, create a new one
           const newReport = new ReportMonitorModel({
             userId,
             projectId,
@@ -220,7 +227,13 @@ const processScheduleJob = async (job) => {
 
           console.log("New report created for user:", userId);
         } catch (error) {
-          console.error("Error executing mutation:", error);
+          if (
+            error.message === "Your Website Crawlling is already in progress."
+          ) {
+            console.log("Crawling is already in progress for this user");
+          } else {
+            console.error("Error executing mutation:", error);
+          }
         }
       }
     });
@@ -302,7 +315,13 @@ const processScheduleJob = async (job) => {
               mostRecentReport._id
             );
           } catch (error) {
-            console.error("Error executing mutation:", error);
+            if (
+              error.message === "Your Website Crawlling is already in progress."
+            ) {
+              console.log("Crawling is already in progress for this user");
+            } else {
+              console.error("Error executing mutation:", error);
+            }
           }
         }
       } else {
@@ -316,7 +335,6 @@ const processScheduleJob = async (job) => {
           const resultData = res.data.ScrapUrl;
           const report = resultData;
 
-          // No document exists, create a new one
           const newReport = new ReportMonitorModel({
             userId,
             projectId,
@@ -331,7 +349,13 @@ const processScheduleJob = async (job) => {
 
           console.log("New report created for user:", userId);
         } catch (error) {
-          console.error("Error executing mutation:", error);
+          if (
+            error.message === "Your Website Crawlling is already in progress."
+          ) {
+            console.log("Crawling is already in progress for this user");
+          } else {
+            console.error("Error executing mutation:", error);
+          }
         }
       }
     });
@@ -419,7 +443,7 @@ const processSchedule30Minute = async (job) => {
 const startAgenda = async () => {
   try {
     const agenda = new Agenda({ db: { address: DB_URL } });
-    
+
     await agenda.start();
     console.log("Agenda job started");
 
