@@ -426,7 +426,7 @@ const startAgenda = async () => {
     // agenda.define("processSchedule", processScheduleJob);
     // agenda.every("1 minute", "processSchedule");
     agenda.define("processSchedule30Minute", processSchedule30Minute);
-    agenda.every("1 minute", "processSchedule30Minute");
+    agenda.every("30 minute", "processSchedule30Minute");
     await agenda.now("processSchedule", "processSchedule30Minute");
   } catch (error) {
     console.error("Error starting Agenda job:", error);
