@@ -419,8 +419,8 @@ const processSchedule30Minute = async (job) => {
 const startAgenda = async () => {
   try {
     const agenda = new Agenda({ db: { address: DB_URL } });
+    
     await agenda.start();
-
     console.log("Agenda job started");
 
     // agenda.define("processSchedule", processScheduleJob);
