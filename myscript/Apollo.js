@@ -7,10 +7,10 @@ const {
 } = require("@apollo/client/core");
 const fetch = require("isomorphic-fetch");
 
-
 // REACT_APP_BACKEND_URI="https://dev-be.nextgenwebthree.com/graphql"
 const httpLink = new HttpLink({
-  uri: "http://localhost:4000/graphql",
+  uri: "https://dev-be.nextgenwebthree.com/graphql",
+
   fetch: fetch,
 });
 

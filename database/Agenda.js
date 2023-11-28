@@ -8,7 +8,7 @@ const { sendEmail } = require("./nodeMailer");
 const { URL } = require("url");
 const ReportMonitorModel = require("../models/ReportMonitering");
 const UptimeRecord = require("../models/UptimeRecord");
-const DB_URL = `mongodb+srv://scrapy:mod123456!@scrapy.uud98fe.mongodb.net/scrapy-django_11?retryWrites=true&w=majority`;
+// const DB_URL = `mongodb+srv://scrapy:mod123456!@scrapy.uud98fe.mongodb.net/scrapy-django_11?retryWrites=true&w=majority`;
 
 const processScheduleJob = async (job) => {
   try {
@@ -442,16 +442,23 @@ const processSchedule30Minute = async (job) => {
 
 const startAgenda = async () => {
   try {
-    const agenda = new Agenda({ db: { address: DB_URL } });
+    const agenda = new Agenda({ db: { address: process.env.DB_URL } });
 
     await agenda.start();
     console.log("Agenda job started");
 
+    // Define the "processSchedule" job to run every minute
     agenda.define("processSchedule", processScheduleJob);
+
     agenda.every("1 minute", "processSchedule");
+
+    // Define the "processSchedule30Minute" job to run every 30 minutes
     agenda.define("processSchedule30Minute", processSchedule30Minute);
-    agenda.every("30 minute", "processSchedule30Minute");
-    await agenda.now("processSchedule", "processSchedule30Minute");
+    agenda.every("30 minutes", "processSchedule30Minute");
+
+    // Uncomment the line below if you want to run the jobs immediately
+    await agenda.now("processSchedule");
+    // await agenda.now("processSchedule30Minute");
   } catch (error) {
     console.error("Error starting Agenda job:", error);
   }
