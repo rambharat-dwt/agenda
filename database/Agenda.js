@@ -12,6 +12,22 @@ const UptimeRecord = require("../models/UptimeRecord");
 
 const processScheduleJob = async (job) => {
   try {
+    const convertToMinutes = (timeString) => {
+      const [time, period] = timeString.split(" ");
+      const [hours, minutes] = time.split(":").map(Number);
+
+      if (period === "AM" && hours === 12) {
+   
+        return minutes;
+      } else if (period === "PM" && hours !== 12) {
+        
+        return (hours + 12) * 60 + minutes;
+      }
+
+     
+      return hours * 60 + minutes;
+    };
+
     const users = await SiteAudit.find({ isActive: true });
 
     const currentTime = new Date().toLocaleTimeString("en-US", {
@@ -20,12 +36,22 @@ const processScheduleJob = async (job) => {
       minute: "2-digit",
     });
 
+
+    const currentTimeInMinutes = convertToMinutes(currentTime);
+
     const dailyUsers = users.filter((user) => {
       if (user.frequency === "daily") {
-        if (currentTime >= user.startTime && currentTime <= user.endTime) {
+        const startTimeInMinutes = convertToMinutes(user.startTime);
+        const endTimeInMinutes = convertToMinutes(user.endTime);
+        
+        if (
+          currentTimeInMinutes >= startTimeInMinutes &&
+          currentTimeInMinutes <= endTimeInMinutes
+        ) {
           return true;
         }
       }
+
       return false;
     });
 
@@ -120,11 +146,11 @@ const processScheduleJob = async (job) => {
     });
     const weeklyUsers = users.filter((user) => {
       if (user.frequency === "weekly") {
-        const startDay = user.startDay?.toLowerCase(); // Convert start day to lowercase for case-insensitive comparison
+        const startDay = user.startDay?.toLowerCase();
 
         const currentDate = new Date();
 
-        const currentDay = currentDate.getDay(); // Get the current day of the week (0-6, where 0 is Sunday)
+        const currentDay = currentDate.getDay();
 
         const startDayIndex = [
           "sunday",
@@ -138,7 +164,15 @@ const processScheduleJob = async (job) => {
 
         // Check if the start day matches the current day of the week
         if (startDayIndex !== -1 && startDayIndex === currentDay) {
-          if (currentTime >= user.startTime && currentTime <= user.endTime) {
+          const currentTimeInMinutes = convertToMinutes(currentTime);
+          const startTimeInMinutes = convertToMinutes(user.startTime);
+          const endTimeInMinutes = convertToMinutes(user.endTime);
+
+          // Check if the current time is within the specified time range
+          if (
+            currentTimeInMinutes >= startTimeInMinutes &&
+            currentTimeInMinutes <= endTimeInMinutes
+          ) {
             return true;
           }
         }
@@ -253,9 +287,17 @@ const processScheduleJob = async (job) => {
         ).getDate();
 
         if (startDay <= lastDayOfMonth) {
+          const currentTimeInMinutes = convertToMinutes(currentTime);
+          const startTimeInMinutes = convertToMinutes(user.startTime);
+          const endTimeInMinutes = convertToMinutes(user.endTime);
+
           // Check if the current day, month, and time match the user's start day and time
           if (startDay === currentDate.getDate()) {
-            if (currentTime >= user.startTime && currentTime <= user.endTime) {
+            // Check if the current time is within the specified time range
+            if (
+              currentTimeInMinutes >= startTimeInMinutes &&
+              currentTimeInMinutes <= endTimeInMinutes
+            ) {
               return true;
             }
           }
