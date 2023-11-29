@@ -17,14 +17,11 @@ const processScheduleJob = async (job) => {
       const [hours, minutes] = time.split(":").map(Number);
 
       if (period === "AM" && hours === 12) {
-   
         return minutes;
       } else if (period === "PM" && hours !== 12) {
-        
         return (hours + 12) * 60 + minutes;
       }
 
-     
       return hours * 60 + minutes;
     };
 
@@ -36,14 +33,13 @@ const processScheduleJob = async (job) => {
       minute: "2-digit",
     });
 
-
     const currentTimeInMinutes = convertToMinutes(currentTime);
 
     const dailyUsers = users.filter((user) => {
       if (user.frequency === "daily") {
         const startTimeInMinutes = convertToMinutes(user.startTime);
         const endTimeInMinutes = convertToMinutes(user.endTime);
-        
+
         if (
           currentTimeInMinutes >= startTimeInMinutes &&
           currentTimeInMinutes <= endTimeInMinutes
@@ -500,7 +496,7 @@ const startAgenda = async () => {
 
     // Uncomment the line below if you want to run the jobs immediately
     await agenda.now("processSchedule");
-    // await agenda.now("processSchedule30Minute");
+    await agenda.now("processSchedule30Minute");
   } catch (error) {
     console.error("Error starting Agenda job:", error);
   }
